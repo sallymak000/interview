@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>詞語聽寫小遊戲</title>
+<style>
+  body {
+    /* 設定優先使用標楷體 */
+    font-family: "標楷體", "DFKai-SB", "BiauKai", "Microsoft JhengHei", sans-serif;
+    font-weight: normal; /* 取消粗體 */
+    background-color: #f0f9ff;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    box-sizing: border-box;
+  }
+
+  h1 {
+    color: #0284c7;
+    font-size: 3rem;
+    font-weight: normal; /* 取消粗體 */
+    margin-bottom: 10px;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+  }
+
+  .instructions {
+    font-size: 1.8rem;
+    color: #475569;
+    margin-bottom: 25px;
+    background-color: #e0f2fe;
+    padding: 12px 25px;
+    border-radius: 20px;
+  }
+
+  /* 遊戲表格 (Grid 佈局) */
+  .grid-table {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 15px;
+    width: 100%;
+    max-width: 950px;
+    margin-bottom: 30px;
+  }
+
+  /* 詞語卡片樣式 */
+  .word-card {
+    background-color: #ffffff;
+    border: 4px solid #38bdf8;
+    border-radius: 18px;
+    padding: 25px 5px;
+    font-size: 3.6rem; /* 再次放大字體 */
+    font-weight: normal; /* 取消粗體 */
+    color: #1e293b;
+    text-align: center;
+    cursor: pointer;
+    box-shadow: 0 6px 0 #0284c7;
+    transition: all 0.15s ease;
+    user-select: none;
+    position: relative;
+    word-break: break-all;
+  }
+
+  .word-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 0 #0284c7;
+    background-color: #f8fafc;
+  }
+
+  .word-card:active {
+    transform: translateY(4px);
+    box-shadow: 0 2px 0 #0284c7;
+  }
+
+  /* 點擊標記後的樣式 */
+  .word-card.marked {
+    background-color: #4ade80;
+    border-color: #16a34a;
+    color: #ffffff;
+    box-shadow: 0 6px 0 #15803d;
+  }
+
+  .word-card.marked:hover {
+    background-color: #22c55e;
+    box-shadow: 0 8px 0 #15803d;
+  }
+
+  .word-card.marked::after {
+    content: "✓";
+    position: absolute;
+    top: 5px;
+    right: 8px;
+    font-size: 1.8rem;
+    color: #ffffff;
+    font-family: Arial, sans-serif;
+  }
+
+  /* 紀錄區域 */
+  .record-panel {
+    background-color: #ffffff;
+    border-radius: 15px;
+    padding: 20px;
+    width: 100%;
+    max-width: 950px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    box-sizing: border-box;
+  }
+
+  .record-panel h2 {
+    margin-top: 0;
+    color: #334155;
+    font-size: 2rem;
+    font-weight: normal; /* 取消粗體 */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .badge {
+    background-color: #0284c7;
+    color: white;
+    padding: 4px 16px;
+    border-radius: 12px;
+    font-size: 1.6rem;
+    font-family: Arial, sans-serif;
+  }
+
+  .marked-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    min-height: 40px;
+    align-items: center;
+  }
+
+  .tag {
+    background-color: #dcfce7;
+    color: #15803d;
+    border: 2px solid #86efac;
+    padding: 8px 18px;
+    border-radius: 20px;
+    font-size: 1.8rem;
+    font-weight: normal; /* 取消粗體 */
+  }
+
+  .empty-hint {
+    color: #94a3b8;
+    font-size: 1.5rem;
+  }
+
+  .btn-reset {
+    margin-top: 20px;
+    padding: 15px 30px;
+    font-size: 1.6rem;
+    font-weight: normal; /* 取消粗體 */
+    font-family: "標楷體", "DFKai-SB", sans-serif;
+    color: white;
+    background-color: #ef4444;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    box-shadow: 0 4px 0 #b91c1c;
+    transition: all 0.1s;
+  }
+
+  .btn-reset:active {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 #b91c1c;
+  }
+
+  /* 響應式頁面：手機屏調成兩欄排列 */
+  @media (max-width: 650px) {
+    .grid-table {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+    .word-card {
+      font-size: 2.8rem;
+      padding: 20px 5px;
+    }
+  }
+</style>
+</head>
+<body>
+
+  <h1>🎧 詞語聽寫大挑戰</h1>
+  <div class="instructions">📢 仔細聽老師唸詞語，聽到後點擊對應的詞語卡片！</div>
+
+  <!-- 詞語表格 -->
+  <div class="grid-table" id="wordGrid"></div>
+
+  <!-- 已點選紀錄區 -->
+  <div class="record-panel">
+    <h2>
+      📝 已紀錄的詞語
+      <span class="badge" id="countBadge">0 / 10</span>
+    </h2>
+    <div class="marked-tags" id="markedList">
+      <span class="empty-hint">（目前還沒有點選任何詞語喔！）</span>
+    </div>
+  </div>
+
+  <button class="btn-reset" onclick="resetGame()">🔄 重新開始遊戲</button>
+
+<script>
+  // 指定的 10 個詞語
+  const words = [
+    "美麗", "太陽", "天空", "朱古力", "彩虹",
+    "可怕", "小鳥", "山頂", "繩索", "蝦米"
+  ];
+
+  // 儲存已點擊紀錄的 Set
+  const markedWords = new Set();
+
+  // 初始化表格
+  function initGrid() {
+    const grid = document.getElementById('wordGrid');
+    grid.innerHTML = '';
+
+    words.forEach(word => {
+      const card = document.createElement('div');
+      card.className = 'word-card';
+      card.innerText = word;
+      card.onclick = () => toggleWord(word, card);
+      grid.appendChild(card);
+    });
+  }
+
+  // 切換選取狀態
+  function toggleWord(word, cardElement) {
+    if (markedWords.has(word)) {
+      markedWords.delete(word);
+      cardElement.classList.remove('marked');
+    } else {
+      markedWords.add(word);
+      cardElement.classList.add('marked');
+    }
+    updateRecordPanel();
+  }
+
+  // 更新底部的紀錄面板
+  function updateRecordPanel() {
+    const countBadge = document.getElementById('countBadge');
+    const markedList = document.getElementById('markedList');
+
+    countBadge.innerText = `${markedWords.size} / ${words.length}`;
+    markedList.innerHTML = '';
+
+    if (markedWords.size === 0) {
+      markedList.innerHTML = '<span class="empty-hint">（目前還沒有點選任何詞語喔！）</span>';
+    } else {
+      markedWords.forEach(word => {
+        const tag = document.createElement('span');
+        tag.className = 'tag';
+        tag.innerText = `✓ ${word}`;
+        markedList.appendChild(tag);
+      });
+    }
+  }
+
+  // 重設遊戲
+  function resetGame() {
+    markedWords.clear();
+    initGrid();
+    updateRecordPanel();
+  }
+
+  // 頁面載入時啟動
+  initGrid();
+</script>
+
+</body>
+</html>

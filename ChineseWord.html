@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>詞語聽寫小遊戲</title>
+<title>詞語聽寫與找錯別字遊戲</title>
 <style>
   body {
     /* 設定優先使用標楷體 */
@@ -34,6 +34,7 @@
     background-color: #e0f2fe;
     padding: 12px 25px;
     border-radius: 20px;
+    text-align: center;
   }
 
   /* 遊戲表格 (Grid 佈局) */
@@ -52,7 +53,7 @@
     border: 4px solid #38bdf8;
     border-radius: 18px;
     padding: 25px 5px;
-    font-size: 3.6rem; /* 再次放大字體 */
+    font-size: 3.6rem; /* 大字體 */
     font-weight: normal; /* 取消粗體 */
     color: #1e293b;
     text-align: center;
@@ -107,6 +108,7 @@
     max-width: 950px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.05);
     box-sizing: border-box;
+    margin-bottom: 40px;
   }
 
   .record-panel h2 {
@@ -151,6 +153,101 @@
     font-size: 1.5rem;
   }
 
+  /* 分隔線 */
+  .divider {
+    width: 100%;
+    max-width: 950px;
+    border-top: 3px dashed #cbd5e1;
+    margin: 10px 0 40px 0;
+  }
+
+  /* 找錯別字區域 */
+  .quiz-panel {
+    background-color: #ffffff;
+    border-radius: 20px;
+    padding: 30px;
+    width: 100%;
+    max-width: 950px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    box-sizing: border-box;
+  }
+
+  .quiz-title {
+    color: #d97706;
+    font-size: 2.8rem;
+    font-weight: normal;
+    margin-top: 0;
+    margin-bottom: 10px;
+    text-align: center;
+  }
+
+  .sentence-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 25px;
+  }
+
+  .sentence-card {
+    background-color: #fffbeb;
+    border: 3px solid #fcd34d;
+    border-radius: 15px;
+    padding: 18px 25px;
+    font-size: 2.2rem; /* 句子字體大隻 */
+    font-weight: normal;
+    color: #1e293b;
+    cursor: pointer;
+    box-shadow: 0 4px 0 #d97706;
+    transition: all 0.15s ease;
+    user-select: none;
+    text-align: left;
+  }
+
+  .sentence-card:hover {
+    background-color: #fef3c7;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 #d97706;
+  }
+
+  .sentence-card:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #d97706;
+  }
+
+  .sentence-card.correct {
+    background-color: #dcfce7 !important;
+    border-color: #22c55e !important;
+    box-shadow: 0 4px 0 #15803d !important;
+    color: #15803d;
+  }
+
+  .sentence-card.wrong {
+    background-color: #fee2e2 !important;
+    border-color: #ef4444 !important;
+    box-shadow: 0 4px 0 #b91c1c !important;
+    color: #b91c1c;
+  }
+
+  .feedback-msg {
+    margin-top: 25px;
+    font-size: 2rem;
+    font-weight: normal;
+    text-align: center;
+    min-height: 45px;
+    border-radius: 12px;
+    padding: 10px;
+  }
+
+  .feedback-msg.success {
+    color: #15803d;
+    background-color: #dcfce7;
+  }
+
+  .feedback-msg.error {
+    color: #b91c1c;
+    background-color: #fee2e2;
+  }
+
   .btn-reset {
     margin-top: 20px;
     padding: 15px 30px;
@@ -181,11 +278,16 @@
       font-size: 2.8rem;
       padding: 20px 5px;
     }
+    .sentence-card {
+      font-size: 1.7rem;
+      padding: 15px;
+    }
   }
 </style>
 </head>
 <body>
 
+  <!-- 第一部分：詞語聽寫卡片 -->
   <h1>🎧 詞語聽寫大挑戰</h1>
   <div class="instructions">📢 仔細聽老師唸詞語，聽到後點擊對應的詞語卡片！</div>
 
@@ -203,7 +305,20 @@
     </div>
   </div>
 
-  <button class="btn-reset" onclick="resetGame()">🔄 重新開始遊戲</button>
+  <div class="divider"></div>
+
+  <!-- 第二部分：找錯別字遊戲 -->
+  <div class="quiz-panel">
+    <h1 class="quiz-title">🔍 找錯別字大挑戰</h1>
+    <div class="instructions" style="background-color: #fef3c7; color: #78350f;">
+      📢 請點選下面<b>哪一句句子裡面有錯別字</b>：
+    </div>
+
+    <div class="sentence-list" id="sentenceList"></div>
+    <div class="feedback-msg" id="feedbackMsg"></div>
+  </div>
+
+  <button class="btn-reset" onclick="resetGame()">🔄 重新開始所有遊戲</button>
 
 <script>
   // 指定的 10 個詞語
@@ -212,10 +327,19 @@
     "可怕", "小鳥", "山頂", "繩索", "蝦米"
   ];
 
+  // 5 個句子題目數據 (isWrong 表示該句是否有錯別字)
+  const sentences = [
+    { id: 1, text: "1. 小鳥在樹上快樂地唱著歌。", isWrong: false },
+    { id: 2, text: "2. 我們一起登上了高高的山頂。", isWrong: false },
+    { id: 3, text: "3. 弟弟不小心跌倒了，露出可伯的表情。", isWrong: true },
+    { id: 4, text: "4. 媽媽做的朱古力蛋糕很好吃。", isWrong: false },
+    { id: 5, text: "5. 雨後的天空出現了一道彩虹。", isWrong: false }
+  ];
+
   // 儲存已點擊紀錄的 Set
   const markedWords = new Set();
 
-  // 初始化表格
+  // 初始化詞語表格
   function initGrid() {
     const grid = document.getElementById('wordGrid');
     grid.innerHTML = '';
@@ -229,7 +353,7 @@
     });
   }
 
-  // 切換選取狀態
+  // 切換聽寫選取狀態
   function toggleWord(word, cardElement) {
     if (markedWords.has(word)) {
       markedWords.delete(word);
@@ -261,15 +385,55 @@
     }
   }
 
-  // 重設遊戲
+  // 初始化找錯別字題目
+  function initQuiz() {
+    const container = document.getElementById('sentenceList');
+    const feedback = document.getElementById('feedbackMsg');
+    container.innerHTML = '';
+    feedback.innerText = '';
+    feedback.className = 'feedback-msg';
+
+    sentences.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'sentence-card';
+      card.innerText = item.text;
+      card.onclick = () => checkAnswer(item, card);
+      container.appendChild(card);
+    });
+  }
+
+  // 檢查找錯別字答案
+  function checkAnswer(selectedItem, cardElement) {
+    const allCards = document.querySelectorAll('.sentence-card');
+    const feedback = document.getElementById('feedbackMsg');
+
+    // 重置所有句子卡片狀態
+    allCards.forEach(card => {
+      card.classList.remove('correct', 'wrong');
+    });
+
+    if (selectedItem.isWrong) {
+      cardElement.classList.add('correct');
+      feedback.innerText = '🎉 太棒了！答對了！第 3 句中的「可伯」是錯別字，正確應該是「可怕」！';
+      feedback.className = 'feedback-msg success';
+    } else {
+      cardElement.classList.add('wrong');
+      feedback.innerText = '❌ 這句沒有錯別字喔，再仔細找看看！';
+      feedback.className = 'feedback-msg error';
+    }
+  }
+
+  // 重設所有遊戲
   function resetGame() {
     markedWords.clear();
     initGrid();
     updateRecordPanel();
+    initQuiz();
   }
 
   // 頁面載入時啟動
   initGrid();
+  initQuiz();
 </script>
 
 </body>

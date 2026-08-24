@@ -1,0 +1,26 @@
+{
+  "name": "女拔 P1 中文詞彙",
+  "short_name": "女拔詞彙",
+  "description": "Diocesan Girls' Junior School Year 1 Chinese Vocabulary Learning App",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F5F7FA",
+  "theme_color": "#1F3864",
+  "lang": "zh-HK",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

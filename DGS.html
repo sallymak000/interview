@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="女拔詞彙">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#1F3864">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC&family=Noto+Serif+TC:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+  <title>女拔 P1 中文詞彙</title>
+</head>
+<body>
+  <div id="app">
+    <!-- Screens render here -->
+  </div>
+
+  <!-- Toast notifications -->
+  <div id="toast" class="toast"></div>
+
+  <!-- Confirm modal -->
+  <div id="modal" class="modal hidden">
+    <div class="modal-content">
+      <div id="modal-message" class="modal-message"></div>
+      <div class="modal-buttons">
+        <button id="modal-cancel" class="btn btn-secondary">取消</button>
+        <button id="modal-ok" class="btn btn-primary">確定</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Load data first, then app -->
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

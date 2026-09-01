@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>錄音播放清單 | Audio Playlist Player</title>
+    <style>
+        :root {
+            --primary-color: #1b559b;
+            --primary-light: #eef5fc;
+            --border-color: #e2e8f0;
+            --text-dark: #2d3748;
+            --text-muted: #718096;
+            --accent-color: #2b6cb0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Microsoft JhengHei", sans-serif;
+        }
+
+        body {
+            background-color: #f7fafc;
+            color: var(--text-dark);
+            padding: 20px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        .header {
+            margin-bottom: 25px;
+            border-bottom: 2px solid var(--primary-light);
+            padding-bottom: 15px;
+        }
+
+        .header h1 {
+            color: var(--primary-color);
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header p {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        /* 搜尋與篩選工具欄 */
+        .toolbar {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .search-box, .filter-box {
+            position: relative;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .search-box input, .filter-box select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .search-box input:focus, .filter-box select:focus {
+            border-color: var(--accent-color);
+        }
+
+        /* 表格樣式 */
+        .table-container {
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        thead {
+            background-color: var(--primary-color);
+            color: #ffffff;
+        }
+
+        th, td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #f9fbfd;
+        }
+
+        tbody tr:hover {
+            background-color: var(--primary-light);
+        }
+
+        .category-tag {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            background-color: #e2e8f0;
+            color: #4a5568;
+        }
+
+        /* 錄音播放器樣式 */
+        audio {
+            height: 36px;
+            width: 260px;
+            outline: none;
+        }
+
+        /* 統計資訊 */
+        .footer-info {
+            margin-top: 15px;
+            font-size: 13px;
+            color: var(--text-muted);
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>🎙️ 錄音檔案播放清單 (Audio Records)</h1>
+        <p>可以搜尋標題、選擇分類，快速找尋及播放錄音。</p>
+    </div>
+
+    <!-- 工具列：搜尋 + 分類篩選 -->
+    <div class="toolbar">
+        <div class="search-box">
+            <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="🔍 搜尋錄音名稱/關鍵字...">
+        </div>
+        <div class="filter-box">
+            <select id="categoryFilter" onchange="filterTable()">
+                <option value="">所有分類 (All Categories)</option>
+                <option value="Listening_English">Listening_English</option>
+                <option value="Listening_Chinese">Listening_Chinese</option>
+                <option value="Listening_English_story">Listening_English_story</option>
+                <option value="Listening_Chinese_story">Listening_Chinese_story</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- 錄音表格 -->
+    <div class="table-container">
+        <table id="audioTable">
+            <thead>
+                <tr>
+                    <th style="width: 60px;">編號</th>
+                    <th>錄音標題 / 描述</th>
+                    <th style="width: 110px;">分類</th>
+                    <th style="width: 110px;">錄音日期</th>
+                    <th style="width: 80px;">時長</th>
+                    <th style="width: 280px;">播放器</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- 錄音項目 1 -->
+                <tr>
+                    <td>#001</td>
+                    <td><b>Listening_English</b><br><small style="color: #718096;">From Flyers Reading Exercises</small></td>
+                    <td><span class="category-tag">Listening_English</span></td>
+                    <td>2026-09-01</td>
+                    <td>/</td>
+                    <td><audio controls preload="metadata"><source src="audio/listening20260901_E1.mp3" type="audio/mpeg">您的瀏覽器不支援播放器。</audio></td>
+                </tr>
+
+                <!-- 錄音項目 2 -->
+                <tr>
+                    <td>#002</td>
+                    <td><b>英文課堂錄音 Lesson 1</b><br><small style="color: #718096;">香港常見天氣警報英文發音練習</small></td>
+                    <td><span class="category-tag">學習/課堂</span></td>
+                    <td>2026-08-28</td>
+                    <td>08:12</td>
+                    <td><audio controls preload="metadata"><source src="audio2.mp3" type="audio/mpeg">您的瀏覽器不支援播放器。</audio></td>
+                </tr>
+
+                <!-- 錄音項目 3 -->
+                <tr>
+                    <td>#003</td>
+                    <td><b>靈感備忘：產品新功能設計</b><br><small style="color: #718096;">關於 App 介面的語音想法紀錄</small></td>
+                    <td><span class="category-tag">語音備忘</span></td>
+                    <td>2026-08-30</td>
+                    <td>02:45</td>
+                    <td><audio controls preload="metadata"><source src="audio3.mp3" type="audio/mpeg">您的瀏覽器不支援播放器。</audio></td>
+                </tr>
+
+                <!-- 錄音項目 4 -->
+                <tr>
+                    <td>#004</td>
+                    <td><b>專訪家長聽後感</b><br><small style="color: #718096;">幼兒 K3 學習教材意見收集</small></td>
+                    <td><span class="category-tag">訪問錄音</span></td>
+                    <td>2026-09-01</td>
+                    <td>22:10</td>
+                    <td><audio controls preload="metadata"><source src="audio4.mp3" type="audio/mpeg">您的瀏覽器不支援播放器。</audio></td>
+                </tr>
+
+                <!-- 錄音項目 5 (可自行複製表格行來增加更多錄音) -->
+                <tr>
+                    <td>#005</td>
+                    <td><b>客戶電話溝通紀錄</b><br><small style="color: #718096;">確認 Word 及 HTML 檔案導出格式需求</small></td>
+                    <td><span class="category-tag">會議記錄</span></td>
+                    <td>2026-09-01</td>
+                    <td>05:40</td>
+                    <td><audio controls preload="metadata"><source src="audio5.mp3" type="audio/mpeg">您的瀏覽器不支援播放器。</audio></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="footer-info">
+        顯示項：<span id="recordCount">5</span> 個錄音檔
+    </div>
+</div>
+
+<script>
+    // 搜尋與篩選功能
+    function filterTable() {
+        const searchInput = document.getElementById('searchInput').value.toLowerCase();
+        const categoryFilter = document.getElementById('categoryFilter').value;
+        const table = document.getElementById('audioTable');
+        const trs = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+        let visibleCount = 0;
+
+        for (let i = 0; i < trs.length; i++) {
+            const row = trs[i];
+            const textContent = row.textContent.toLowerCase();
+            const categoryText = row.cells[2].textContent.trim();
+
+            const matchesSearch = textContent.includes(searchInput);
+            const matchesCategory = categoryFilter === "" || categoryText === categoryFilter;
+
+            if (matchesSearch && matchesCategory) {
+                row.style.display = "";
+                visibleCount++;
+            } else {
+                row.style.display = "none";
+            }
+        }
+        document.getElementById('recordCount').innerText = visibleCount;
+    }
+</script>
+
+</body>
+</html>

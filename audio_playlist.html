@@ -29,7 +29,7 @@
         }
 
         .container {
-            max-width: 1100px;
+            max-width: 1200px;
             margin: 0 auto;
             background: #ffffff;
             padding: 30px;
@@ -107,6 +107,7 @@
         th, td {
             padding: 12px 16px;
             border-bottom: 1px solid var(--border-color);
+            vertical-align: middle;
         }
 
         th {
@@ -132,10 +133,41 @@
             color: #4a5568;
         }
 
+        /* 文件下載/查看按鈕樣式 */
+        .doc-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background-color: var(--primary-light);
+            color: var(--primary-color);
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .doc-btn:hover {
+            background-color: var(--primary-color);
+            color: #ffffff;
+            border-color: var(--primary-color);
+        }
+
+        .doc-btn.disabled {
+            background-color: #edf2f7;
+            color: #a0aec0;
+            border-color: #e2e8f0;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
         /* 錄音播放器樣式 */
         audio {
             height: 36px;
-            width: 260px;
+            width: 240px;
             outline: none;
         }
 
@@ -152,8 +184,8 @@
 
 <div class="container">
     <div class="header">
-        <h1>🎙️ 錄音檔案播放清單 (Audio Records)</h1>
-        <p>可以搜尋標題、選擇分類，快速找尋及播放錄音。</p>
+        <h1>🎙️ 錄音檔案播放清單 (Audio Playlist Player)</h1>
+        <p>可以搜尋標題、選擇分類，快速找尋、播放錄音及開啟對應的練習文件。</p>
     </div>
 
     <!-- 工具列：搜尋 + 分類篩選 -->
@@ -181,8 +213,8 @@
                     <th>錄音標題 / 描述</th>
                     <th style="width: 110px;">分類</th>
                     <th style="width: 110px;">錄音日期</th>
-                    <th style="width: 80px;">時長</th>
-                    <th style="width: 280px;">播放器</th>
+                    <th style="width: 120px;">練習文件</th>
+                    <th style="width: 250px;">播放器</th>
                 </tr>
             </thead>
             <tbody>
@@ -192,17 +224,26 @@
                     <td><b>Listening_English</b><br><small style="color: #718096;">From Flyers Reading Exercises</small></td>
                     <td><span class="category-tag">Listening_English</span></td>
                     <td>2026-09-01</td>
-                    <td>/</td>
+                    <td>
+                        <!-- 開啟 DOC / PDF 檔案的按鈕 -->
+                        <a href="docs/Flyers_Exercise_01.docx" target="_blank" class="doc-btn">
+                            📄 開啟練習 (DOC)
+                        </a>
+                    </td>
                     <td><audio controls preload="metadata"><source src="audio/listening20260901_E1.mp3" type="audio/mpeg">您的瀏覽器不支援播放器。</audio></td>
                 </tr>
 
-                <!-- 錄音項目 2 -->
+                <!-- 錄音項目 2 (以古曉柔故事為例) -->
                 <tr>
                     <td>#002</td>
-                    <td><b>DGS學生中文故事聆聽</b><br><small style="color: #718096;">DGS學生中文故事聆聽</small></td>
+                    <td><b>DGS學生中文故事聆聽</b><br><small style="color: #718096;">古曉柔的故事《知錯能改的小狗波波》</small></td>
                     <td><span class="category-tag">Listening_Chinese</span></td>
                     <td>2026-09-02</td>
-                    <td>/</td>
+                    <td>
+                        <a href="docs/C1.docx" target="_blank" class="doc-btn">
+                            📄 開啟練習 (PDF)
+                        </a>
+                    </td>
                     <td><audio controls preload="metadata"><source src="audio/listening20260902_C1.mp3" type="audio/mpeg">您的瀏覽器不支援播放器。</audio></td>
                 </tr>
 
@@ -212,7 +253,10 @@
                     <td><b>靈感備忘：產品新功能設計</b><br><small style="color: #718096;">關於 App 介面的語音想法紀錄</small></td>
                     <td><span class="category-tag">語音備忘</span></td>
                     <td>2026-08-30</td>
-                    <td>02:45</td>
+                    <td>
+                        <!-- 沒有文件的範例 -->
+                        <span class="doc-btn disabled">無附檔</span>
+                    </td>
                     <td><audio controls preload="metadata"><source src="audio3.mp3" type="audio/mpeg">您的瀏覽器不支援播放器。</audio></td>
                 </tr>
 
@@ -222,17 +266,25 @@
                     <td><b>專訪家長聽後感</b><br><small style="color: #718096;">幼兒 K3 學習教材意見收集</small></td>
                     <td><span class="category-tag">訪問錄音</span></td>
                     <td>2026-09-01</td>
-                    <td>22:10</td>
+                    <td>
+                        <a href="docs/K3_Interview_Notes.docx" target="_blank" class="doc-btn">
+                            📄 開啟練習 (DOC)
+                        </a>
+                    </td>
                     <td><audio controls preload="metadata"><source src="audio4.mp3" type="audio/mpeg">您的瀏覽器不支援播放器。</audio></td>
                 </tr>
 
-                <!-- 錄音項目 5 (可自行複製表格行來增加更多錄音) -->
+                <!-- 錄音項目 5 -->
                 <tr>
                     <td>#005</td>
                     <td><b>客戶電話溝通紀錄</b><br><small style="color: #718096;">確認 Word 及 HTML 檔案導出格式需求</small></td>
                     <td><span class="category-tag">會議記錄</span></td>
                     <td>2026-09-01</td>
-                    <td>05:40</td>
+                    <td>
+                        <a href="docs/Meeting_Minutes.docx" target="_blank" class="doc-btn">
+                            📄 開啟練習 (DOC)
+                        </a>
+                    </td>
                     <td><audio controls preload="metadata"><source src="audio5.mp3" type="audio/mpeg">您的瀏覽器不支援播放器。</audio></td>
                 </tr>
             </tbody>

@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>開心小廚 - 每日與每月營業額統計工具</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for cute icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Font - Zen Maru Gothic -->
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'chef-yellow': '#FFF7D6',
+                        'chef-orange': '#FF9F43',
+                        'chef-pink': '#FF6B81',
+                        'chef-green': '#2ED573',
+                        'chef-blue': '#1E90FF',
+                        'chef-purple': '#A55EEA',
+                        'chef-cream': '#FEF9E7',
+                        'chef-border': '#FFEAA7',
+                    },
+                    fontFamily: {
+                        cute: ['Zen Maru Gothic', 'PingFang TC', 'Microsoft JhengHei', sans-serif],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Zen Maru Gothic', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+            background-color: #FAF4E8;
+            background-image: radial-gradient(#E8D5B5 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #FFF7D6;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #FF9F43;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="min-h-screen pb-12 text-slate-800">
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2"></div>
+
+    <!-- Header Section -->
+    <header class="bg-amber-300 border-b-4 border-amber-400 shadow-md py-4 px-6 mb-6">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-white p-3 rounded-full shadow border-2 border-orange-400 text-3xl text-orange-500">
+                    <i class="fa-solid fa-utensils"></i>
+                </div>
+                <div>
+                    <h1 class="text-3xl font-black text-amber-900 tracking-wide">開心小廚 🍳</h1>
+                    <p class="text-amber-800 text-sm font-bold">每日訂單與營業額統計系統 (Daily & Monthly Revenue Calculator)</p>
+                </div>
+            </div>
+
+            <!-- View Switcher Tabs -->
+            <div class="flex items-center bg-amber-200 p-1.5 rounded-2xl border-2 border-amber-400 gap-2">
+                <button id="btn-tab-daily" onclick="switchView('daily')" class="px-5 py-2 rounded-xl font-black text-lg transition flex items-center gap-2 bg-white text-orange-600 shadow">
+                    <i class="fa-solid fa-calendar-day"></i> 每日登記
+                </button>
+                <button id="btn-tab-monthly" onclick="switchView('monthly')" class="px-5 py-2 rounded-xl font-black text-lg transition flex items-center gap-2 text-amber-800 hover:bg-amber-100">
+                    <i class="fa-solid fa-calendar-days"></i> 每月統計
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="max-w-6xl mx-auto px-4">
+
+        <!-- ==================== VIEW 1: DAILY ORDER & REVENUE ==================== -->
+        <div id="view-daily" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            <!-- Left Column: Quick Order Input (5 cols) -->
+            <section class="lg:col-span-5 flex flex-col gap-5">
+                <div class="bg-white rounded-3xl p-6 shadow-lg border-4 border-orange-300">
+                    <div class="flex items-center justify-between mb-4 border-b-2 border-dashed border-orange-200 pb-3">
+                        <h2 class="text-2xl font-black text-orange-600 flex items-center gap-2">
+                            <i class="fa-solid fa-cash-register"></i> 快速落單登記
+                        </h2>
+                        <button onclick="resetCurrentOrder()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1.5 rounded-xl font-bold transition">
+                            <i class="fa-solid fa-rotate-left"></i> 清空本次輸入
+                        </button>
+                    </div>
+
+                    <!-- Date Selector for Daily View -->
+                    <div class="bg-amber-50 p-3 rounded-2xl border-2 border-amber-200 mb-4 flex items-center justify-between">
+                        <label for="selected-date" class="font-bold text-slate-700 flex items-center gap-2">
+                            <i class="fa-solid fa-calendar text-amber-500 text-lg"></i> 選擇登記日期：
+                        </label>
+                        <input type="date" id="selected-date" class="font-bold text-slate-800 bg-white rounded-xl p-1.5 border border-amber-300 focus:outline-none focus:ring-2 focus:ring-orange-400">
+                    </div>
+
+                    <!-- Category Items List -->
+                    <div class="space-y-6 max-h-[550px] overflow-y-auto pr-1">
+
+                        <!-- 主菜 Section -->
+                        <div>
+                            <div class="bg-rose-500 text-white font-black px-4 py-1.5 rounded-full inline-block text-lg mb-3 shadow">
+                                <i class="fa-solid fa-bowl-rice"></i> 主菜
+                            </div>
+                            <div class="space-y-2.5">
+                                <div class="flex items-center justify-between bg-rose-50 p-3 rounded-2xl border-2 border-rose-200 hover:border-rose-400 transition">
+                                    <div>
+                                        <span class="text-lg font-bold text-slate-800 block">1. 芝士牛肉漢堡</span>
+                                        <span class="text-sm font-black text-rose-600">$19</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 bg-white px-2 py-1 rounded-xl shadow-inner border border-rose-200">
+                                        <button onclick="updateTempQty('m1', -1)" class="w-8 h-8 bg-rose-200 hover:bg-rose-300 text-rose-800 rounded-lg font-black text-xl flex items-center justify-center transition active:scale-95">-</button>
+                                        <span id="temp-m1" class="w-8 text-center font-black text-xl text-slate-800">0</span>
+                                        <button onclick="updateTempQty('m1', 1)" class="w-8 h-8 bg-rose-500 hover:bg-rose-600 text-white rounded-lg font-black text-xl flex items-center justify-center transition active:scale-95">+</button>
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-between bg-rose-50 p-3 rounded-2xl border-2 border-rose-200 hover:border-rose-400 transition">
+                                    <div>
+                                        <span class="text-lg font-bold text-slate-800 block">2. 茄汁意粉</span>
+                                        <span class="text-sm font-black text-rose-600">$17</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 bg-white px-2 py-1 rounded-xl shadow-inner border border-rose-200">
+                                        <button onclick="updateTempQty('m2', -1)" class="w-8 h-8 bg-rose-200 hover:bg-rose-300 text-rose-800 rounded-lg font-black text-xl flex items-center justify-center transition active:scale-95">-</button>
+                                        <span id="temp-m2" class="w-8 text-center font-black text-xl text-slate-800">0</span>
+                                        <button onclick="updateTempQty('m2', 1)" class="w-8 h-8 bg-rose-500 hover:bg-rose-600 text-white rounded-lg font-black text-xl flex items-center justify-center transition active:scale-95">+</button>
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-between bg-rose-50 p-3 rounded-2xl border-2 border-rose-200 hover:border-rose-400 transition">
+                                    <div>
+                                        <span class="text-lg font-bold text-slate-800 block">3. 太陽蛋咖哩飯</span>
+                                        <span class="text-sm font-black text-rose-600">$18</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 bg-white px-2 py-1 rounded-xl shadow-inner border border-rose-200">
+                                        <button onclick="updateTempQty('m3', -1)" class="w-8 h-8 bg-rose-200 hover:bg-rose-300 text-rose-800 rounded-lg font-black text-xl flex items-center justify-center transition active:scale-95">-</button>
+                                        <span id="temp-m3" class="w-8 text-center font-black text-xl text-slate-800">0</span>
+                                        <button onclick="updateTempQty('m3', 1)" class="w-8 h-8 bg-rose-500 hover:bg-rose-600 text-white rounded-lg font-black text-xl flex items-center justify-center transition active:scale-95">+</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 小食 Section -->
+                        <div>
+                            <div class="bg-amber-500 text-white font-black px-4 py-1.5 rounded-full inline-block text-lg mb-3 shadow">
+                                <i class="fa-solid fa-cookie-bite"></i> 小食
+                            </div>
+                            <div class="space-y-2.5">
+                                <div class="flex items-center justify-between bg-amber-50 p-3 rounded-2xl border-2 border-amber-200 hover:border-amber-400 transition">
+                                    <div>
+                                        <span class="text-lg font-bold text-slate-800 block">1. 脆脆薯條</span>
+                                        <span class="text-sm font-black text-amber-600">$12</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 bg-white px-2 py-1 rounded-xl shadow-inner border border-amber-200">
+                                        <button onclick="updateTempQty('s1', -1)" class="w-8 h-8 bg-amber-200 hover:bg-amber-300 text-amber-800 rounded-lg font-black text-xl flex items-center justify-center transition active:scale-95">-</button>
+                                        <span id="temp-s1" class="w-8 text-center font-black text-xl text-slate-800">0</span>
+                                        <button onclick="updateTempQty('s1', 1)" class="w-8 h-8 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-black text-xl flex items-center justify-center transition active:scale-95">+</button>
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-between bg-amber-50 p-3 rounded-2xl border-2 border-amber-200 hover:border-amber-400 transition">
+                                    <div>
+                                        <span class="text-lg font-bold text-slate-800 block">2. 雞塊六件</span>
+                                        <span class="text-sm font-black text-amber-600">$14</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 bg-white px-2 py-1 rounded-xl shadow-inner border border-amber-200">
+                                        <button onclick="updateTempQty('s2', -1)" class="w-8 h-8 bg-amber-200 hover:bg-amber-300 text-amber-800 rounded-lg font-black text-xl flex items-center justify-center transition active:scale-95">-</button>
+                                        <span id="temp-s2" class="w-8 text-center font-black text-xl text-slate-800">0</span>
+                                        <button onclick="updateTempQty('s2', 1)" class="w-8 h-8 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-black text-xl flex items-center justify-center transition active:scale-95">+</button>
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-between bg-amber-50 p-3 rounded-2xl border-2 border-amber-200 hover:border-amber-400 transition">
+                                    <div>
+                                        <span class="text-lg font-bold text-slate-800 block">3. 水果拼盤</span>
+                                        <span class="text-sm font-black text-amber-600">$15</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 bg-white px-2 py-1 rounded-xl shadow-inner border border-amber-200">
+                                        <button onclick="updateTempQty('s3', -1)" class="w-8 h-8 bg-amber-200 hover:bg-amber-300 text-amber-800 rounded-lg font-black text-xl flex items-center justify-center transition active:scale-95">-</button>
+                                        <span id="temp-s3" class="w-8 text-center font-black text-xl text-slate-800">0</span>
+                                        <button onclick="updateTempQty('s3', 1)" class="w-8 h-8 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-black text-xl flex items-center justify-center transition active:scale-95">+</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 飲品 Section -->
+                        <div>
+                            <div class="bg-sky-500 text-white font-black px-4 py-1.5 rounded-full inline-block text-lg mb-3 shadow">
+                                <i class="fa-solid fa-glass-water"></i> 飲品
+                            </div>
+                            <div class="space-y-2.5">
+                                <div class="flex items-center justify-between bg-sky-50 p-3 rounded-2xl border-2 border-sky-200 hover:border-sky-400 transition">
+                                    <div>
+                                        <span class="text-lg font-bold text-slate-800 block">1. 橙汁</span>
+                                        <span class="text-sm font-black text-sky-600">$12</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 bg-white px-2 py-1 rounded-xl shadow-inner border border-sky-200">
+                                        <button onclick="updateTempQty('d1', -1)" class="w-8 h-8 bg-sky-200 hover:bg-sky-300 text-sky-800 rounded-lg font-black text-xl flex items-center justify-center transition active:scale-95">-</button>
+                                        <span id="temp-d1" class="w-8 text-center font-black text-xl text-slate-800">0</span>
+                                        <button onclick="updateTempQty('d1', 1)" class="w-8 h-8 bg-sky-500 hover:bg-sky-600 text-white rounded-lg font-black text-xl flex items-center justify-center transition active:scale-95">+</button>
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-between bg-sky-50 p-3 rounded-2xl border-2 border-sky-200 hover:border-sky-400 transition">
+                                    <div>
+                                        <span class="text-lg font-bold text-slate-800 block">2. 朱古力鮮奶</span>
+                                        <span class="text-sm font-black text-sky-600">$15</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 bg-white px-2 py-1 rounded-xl shadow-inner border border-sky-200">
+                                        <button onclick="updateTempQty('d2', -1)" class="w-8 h-8 bg-sky-200 hover:bg-sky-300 text-sky-800 rounded-lg font-black text-xl flex items-center justify-center transition active:scale-95">-</button>
+                                        <span id="temp-d2" class="w-8 text-center font-black text-xl text-slate-800">0</span>
+                                        <button onclick="updateTempQty('d2', 1)" class="w-8 h-8 bg-sky-500 hover:bg-sky-600 text-white rounded-lg font-black text-xl flex items-center justify-center transition active:scale-95">+</button>
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-between bg-sky-50 p-3 rounded-2xl border-2 border-sky-200 hover:border-sky-400 transition">
+                                    <div>
+                                        <span class="text-lg font-bold text-slate-800 block">3. 礦泉水</span>
+                                        <span class="text-sm font-black text-sky-600">$8</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 bg-white px-2 py-1 rounded-xl shadow-inner border border-sky-200">
+                                        <button onclick="updateTempQty('d3', -1)" class="w-8 h-8 bg-sky-200 hover:bg-sky-300 text-sky-800 rounded-lg font-black text-xl flex items-center justify-center transition active:scale-95">-</button>
+                                        <span id="temp-d3" class="w-8 text-center font-black text-xl text-slate-800">0</span>
+                                        <button onclick="updateTempQty('d3', 1)" class="w-8 h-8 bg-sky-500 hover:bg-sky-600 text-white rounded-lg font-black text-xl flex items-center justify-center transition active:scale-95">+</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="mt-6 border-t-2 border-orange-100 pt-4">
+                        <button onclick="submitOrder()" class="w-full bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white font-black text-xl py-3.5 px-6 rounded-2xl shadow-lg border-b-4 border-emerald-700 transition flex items-center justify-center gap-3 active:translate-y-1">
+                            <i class="fa-solid fa-check-circle text-2xl"></i> 提交此單並累計到今日數據
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Column: Daily Summary & Analytics (7 cols) -->
+            <section class="lg:col-span-7 flex flex-col gap-6">
+
+                <!-- Summary Total Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="bg-gradient-to-br from-amber-400 to-orange-400 p-5 rounded-3xl shadow-md text-white border-4 border-amber-300 flex items-center justify-between">
+                        <div>
+                            <p class="font-bold text-amber-100 text-lg">今日總營業額</p>
+                            <p id="total-revenue" class="text-4xl font-black tracking-tight mt-1">$0</p>
+                        </div>
+                        <div class="text-5xl opacity-80">
+                            <i class="fa-solid fa-sack-dollar"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-gradient-to-br from-sky-400 to-blue-500 p-5 rounded-3xl shadow-md text-white border-4 border-sky-300 flex items-center justify-between">
+                        <div>
+                            <p class="font-bold text-sky-100 text-lg">今日總售出份數</p>
+                            <p id="total-items" class="text-4xl font-black tracking-tight mt-1">0 <span class="text-2xl font-bold">份</span></p>
+                        </div>
+                        <div class="text-5xl opacity-80">
+                            <i class="fa-solid fa-receipt"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detailed Summary Table -->
+                <div class="bg-white rounded-3xl p-6 shadow-lg border-4 border-amber-200">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-2xl font-black text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-list-check text-amber-500"></i> 今日銷售數據明細
+                        </h3>
+                        <span id="display-date-tag" class="text-sm font-bold bg-amber-100 text-amber-800 px-3 py-1 rounded-full">--</span>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-amber-100 text-amber-900 border-b-2 border-amber-200">
+                                    <th class="p-3 font-black rounded-l-xl text-base">項目名稱</th>
+                                    <th class="p-3 font-black text-center text-base">單價</th>
+                                    <th class="p-3 font-black text-center text-base">銷售數量</th>
+                                    <th class="p-3 font-black text-right rounded-r-xl text-base">總小計 ($)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="summary-table-body" class="divide-y divide-gray-100 text-base font-bold text-slate-700">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Daily Chart & Analytics -->
+                <div class="bg-white rounded-3xl p-6 shadow-lg border-4 border-purple-200">
+                    <h3 class="text-2xl font-black text-purple-700 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-chart-pie"></i> 今日熱門銷售分析
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                        <div class="relative w-full h-64 flex items-center justify-center">
+                            <canvas id="dailySalesChart"></canvas>
+                        </div>
+                        <div class="bg-purple-50 p-4 rounded-2xl border-2 border-purple-200 flex flex-col justify-center">
+                            <p class="text-purple-600 font-bold text-sm uppercase tracking-wider">🌟 今日最受歡迎餐點</p>
+                            <p id="top-item-name" class="text-2xl font-black text-purple-900 mt-1">尚無數據</p>
+                            <p id="top-item-stat" class="text-sm text-purple-700 font-bold mt-1">請開始登記今日第一個訂單！</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Daily Action Buttons Footer -->
+                <div class="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl shadow border-2 border-amber-200">
+                    <button onclick="resetDailyData()" class="bg-red-100 hover:bg-red-200 text-red-600 font-bold px-4 py-2.5 rounded-xl transition flex items-center gap-2">
+                        <i class="fa-solid fa-trash-can"></i> 重置當日數據
+                    </button>
+                    <div class="flex items-center gap-2">
+                        <button onclick="copyDailyReport()" class="bg-sky-500 hover:bg-sky-600 text-white font-bold px-4 py-2.5 rounded-xl transition shadow flex items-center gap-2">
+                            <i class="fa-solid fa-copy"></i> 複製每日報表
+                        </button>
+                        <button onclick="window.print()" class="bg-slate-700 hover:bg-slate-800 text-white font-bold px-4 py-2.5 rounded-xl transition shadow flex items-center gap-2">
+                            <i class="fa-solid fa-print"></i> 列印
+                        </button>
+                    </div>
+                </div>
+
+            </section>
+        </div>
+
+
+        <!-- ==================== VIEW 2: MONTHLY REVENUE ANALYSIS ==================== -->
+        <div id="view-monthly" class="hidden flex-col gap-6">
+
+            <!-- Month Filter & Header Banner -->
+            <div class="bg-white rounded-3xl p-6 shadow-lg border-4 border-indigo-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="bg-indigo-100 text-indigo-600 p-3 rounded-2xl text-2xl font-black">
+                        <i class="fa-solid fa-calendar-check"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-black text-indigo-950">每月營業額總覽與分析</h2>
+                        <p class="text-indigo-600 font-bold text-sm">檢視全月走勢、平均收益與熱銷餐點排行</p>
+                    </div>
+                </div>
+
+                <!-- Month Picker Input -->
+                <div class="bg-indigo-50 p-3 rounded-2xl border-2 border-indigo-200 flex items-center gap-3">
+                    <label for="selected-month" class="font-bold text-indigo-900 flex items-center gap-2">
+                        <i class="fa-solid fa-filter text-indigo-500"></i> 選擇月份：
+                    </label>
+                    <input type="month" id="selected-month" class="font-bold text-indigo-900 bg-white rounded-xl p-2 border border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                </div>
+            </div>
+
+            <!-- 1. Monthly Revenue Overview Cards (4 Grid) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Total Revenue -->
+                <div class="bg-gradient-to-br from-indigo-500 to-purple-600 p-5 rounded-3xl shadow-md text-white border-4 border-indigo-300 flex items-center justify-between">
+                    <div>
+                        <p class="font-bold text-indigo-100 text-base">本月總營業額</p>
+                        <p id="monthly-total-revenue" class="text-3xl font-black tracking-tight mt-1">$0</p>
+                    </div>
+                    <div class="text-4xl opacity-80">
+                        <i class="fa-solid fa-coins"></i>
+                    </div>
+                </div>
+
+                <!-- Total Items Sold -->
+                <div class="bg-gradient-to-br from-emerald-400 to-teal-600 p-5 rounded-3xl shadow-md text-white border-4 border-emerald-300 flex items-center justify-between">
+                    <div>
+                        <p class="font-bold text-emerald-100 text-base">本月總售出份數</p>
+                        <p id="monthly-total-items" class="text-3xl font-black tracking-tight mt-1">0 <span class="text-xl font-bold">份</span></p>
+                    </div>
+                    <div class="text-4xl opacity-80">
+                        <i class="fa-solid fa-bag-shopping"></i>
+                    </div>
+                </div>
+
+                <!-- Active Days -->
+                <div class="bg-gradient-to-br from-amber-400 to-orange-500 p-5 rounded-3xl shadow-md text-white border-4 border-amber-300 flex items-center justify-between">
+                    <div>
+                        <p class="font-bold text-amber-100 text-base">本月營運天數</p>
+                        <p id="monthly-active-days" class="text-3xl font-black tracking-tight mt-1">0 <span class="text-xl font-bold">天</span></p>
+                    </div>
+                    <div class="text-4xl opacity-80">
+                        <i class="fa-solid fa-calendar-day"></i>
+                    </div>
+                </div>
+
+                <!-- Daily Average Revenue -->
+                <div class="bg-gradient-to-br from-rose-400 to-pink-500 p-5 rounded-3xl shadow-md text-white border-4 border-rose-300 flex items-center justify-between">
+                    <div>
+                        <p class="font-bold text-rose-100 text-base">每日平均營業額</p>
+                        <p id="monthly-avg-revenue" class="text-3xl font-black tracking-tight mt-1">$0</p>
+                    </div>
+                    <div class="text-4xl opacity-80">
+                        <i class="fa-solid fa-chart-line"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Monthly Charts Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Trend Chart (8 Cols) -->
+                <div class="lg:col-span-7 bg-white rounded-3xl p-6 shadow-lg border-4 border-indigo-200 flex flex-col">
+                    <h3 class="text-2xl font-black text-indigo-900 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-chart-column text-indigo-500"></i> 本月每日營業額趨勢 (Daily Revenue Trend)
+                    </h3>
+                    <div class="relative w-full h-72 flex items-center justify-center my-auto">
+                        <canvas id="monthlyTrendChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Popular Items Chart & Best Item (5 Cols) -->
+                <div class="lg:col-span-5 bg-white rounded-3xl p-6 shadow-lg border-4 border-pink-200 flex flex-col justify-between">
+                    <h3 class="text-2xl font-black text-rose-900 mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-pie-chart text-rose-500"></i> 本月熱門餐點占比
+                    </h3>
+                    <div class="relative w-full h-52 flex items-center justify-center my-2">
+                        <canvas id="monthlyPieChart"></canvas>
+                    </div>
+                    <div class="bg-rose-50 p-4 rounded-2xl border-2 border-rose-200 mt-2">
+                        <p class="text-rose-600 font-bold text-xs uppercase tracking-wider">🏆 本月熱銷冠軍</p>
+                        <p id="monthly-top-item-name" class="text-2xl font-black text-rose-900 mt-1">尚無數據</p>
+                        <p id="monthly-top-item-stat" class="text-sm text-rose-700 font-bold mt-1">暫無本月資料</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Monthly Daily Breakdown Table -->
+            <div class="bg-white rounded-3xl p-6 shadow-lg border-4 border-amber-200">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-2xl font-black text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-table-list text-amber-500"></i> 本月每日歷史數據明細
+                    </h3>
+                    <span id="display-month-tag" class="text-sm font-bold bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full">--</span>
+                </div>
+
+                <div class="overflow-x-auto max-h-[400px] overflow-y-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="sticky top-0 bg-amber-100 text-amber-900 border-b-2 border-amber-200">
+                            <tr>
+                                <th class="p-3 font-black rounded-l-xl text-base">日期</th>
+                                <th class="p-3 font-black text-center text-base">售出總份數</th>
+                                <th class="p-3 font-black text-center text-base">當日營業額 ($)</th>
+                                <th class="p-3 font-black text-center text-base">熱銷餐點</th>
+                                <th class="p-3 font-black text-right rounded-r-xl text-base">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="monthly-table-body" class="divide-y divide-gray-100 text-base font-bold text-slate-700">
+                            <!-- JS Dynamically injects rows here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 4. Monthly Action Buttons Footer -->
+            <div class="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl shadow border-2 border-indigo-200">
+                <div class="text-sm text-indigo-700 font-bold">
+                    <i class="fa-solid fa-circle-info"></i> 所有數據均實時匯總，切換月份可查閱過去營運紀錄。
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="copyMonthlyReport()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-2.5 rounded-xl transition shadow flex items-center gap-2">
+                        <i class="fa-solid fa-copy"></i> 複製月度總結報表
+                    </button>
+                    <button onclick="window.print()" class="bg-slate-700 hover:bg-slate-800 text-white font-bold px-5 py-2.5 rounded-xl transition shadow flex items-center gap-2">
+                        <i class="fa-solid fa-print"></i> 列印月報表
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // Menu Items Definition
+        const menuItems = {
+            m1: { name: '芝士牛肉漢堡', price: 19, category: '主菜' },
+            m2: { name: '茄汁意粉', price: 17, category: '主菜' },
+            m3: { name: '太陽蛋咖哩飯', price: 18, category: '主菜' },
+            s1: { name: '脆脆薯條', price: 12, category: '小食' },
+            s2: { name: '雞塊六件', price: 14, category: '小食' },
+            s3: { name: '水果拼盤', price: 15, category: '小食' },
+            d1: { name: '橙汁', price: 12, category: '飲品' },
+            d2: { name: '朱古力鮮奶', price: 15, category: '飲品' },
+            d3: { name: '礦泉水', price: 8, category: '飲品' },
+        };
+
+        // Temporary quantities in quick order input
+        let tempOrder = { m1:0, m2:0, m3:0, s1:0, s2:0, s3:0, d1:0, d2:0, d3:0 };
+
+        // Sales Data Store (Keyed by date YYYY-MM-DD)
+        let allSalesData = {};
+
+        // Active Choices
+        let currentDate = '';
+        let currentMonth = '';
+
+        // Chart Instances
+        let dailySalesChartInstance = null;
+        let monthlyTrendChartInstance = null;
+        let monthlyPieChartInstance = null;
+
+        // Current View Tab
+        let activeView = 'daily';
+
+        // Initialize on page load
+        window.onload = function() {
+            const today = new Date();
+            const todayStr = today.toISOString().split('T')[0];
+            const monthStr = todayStr.substring(0, 7);
+
+            // Set Inputs
+            const dateInput = document.getElementById('selected-date');
+            const monthInput = document.getElementById('selected-month');
+            dateInput.value = todayStr;
+            monthInput.value = monthStr;
+
+            currentDate = todayStr;
+            currentMonth = monthStr;
+
+            // Load LocalStorage
+            loadFromStorage();
+
+            // Date & Month Change Listeners
+            dateInput.addEventListener('change', function(e) {
+                currentDate = e.target.value;
+                if (currentDate) {
+                    currentMonth = currentDate.substring(0, 7);
+                    monthInput.value = currentMonth;
+                }
+                updateDailyUI();
+            });
+
+            monthInput.addEventListener('change', function(e) {
+                currentMonth = e.target.value;
+                updateMonthlyUI();
+            });
+
+            // Initialize Charts
+            initDailyChart();
+            initMonthlyCharts();
+
+            // Render Initial UI
+            updateDailyUI();
+            updateMonthlyUI();
+        };
+
+        // Switch View Tab (Daily vs Monthly)
+        function switchView(view) {
+            activeView = view;
+            const dailyBtn = document.getElementById('btn-tab-daily');
+            const monthlyBtn = document.getElementById('btn-tab-monthly');
+            const dailyView = document.getElementById('view-daily');
+            const monthlyView = document.getElementById('view-monthly');
+
+            if (view === 'daily') {
+                dailyView.classList.remove('hidden');
+                monthlyView.classList.add('hidden');
+                dailyView.classList.add('grid');
+
+                dailyBtn.className = "px-5 py-2 rounded-xl font-black text-lg transition flex items-center gap-2 bg-white text-orange-600 shadow";
+                monthlyBtn.className = "px-5 py-2 rounded-xl font-black text-lg transition flex items-center gap-2 text-amber-800 hover:bg-amber-100";
+                
+                updateDailyUI();
+            } else {
+                dailyView.classList.add('hidden');
+                dailyView.classList.remove('grid');
+                monthlyView.classList.remove('hidden');
+
+                monthlyBtn.className = "px-5 py-2 rounded-xl font-black text-lg transition flex items-center gap-2 bg-white text-indigo-600 shadow";
+                dailyBtn.className = "px-5 py-2 rounded-xl font-black text-lg transition flex items-center gap-2 text-amber-800 hover:bg-amber-100";
+
+                updateMonthlyUI();
+            }
+        }
+
+        // Toast Notification Helper
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const bgClass = type === 'success' ? 'bg-emerald-500' : (type === 'warning' ? 'bg-amber-500' : 'bg-rose-500');
+            toast.className = `${bgClass} text-white font-bold px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3 transition-all duration-300 opacity-0 transform translate-y-[-10px]`;
+            
+            const icon = type === 'success' ? 'fa-check-circle' : 'fa-triangle-exclamation';
+            toast.innerHTML = `<i class="fa-solid ${icon} text-xl"></i> <span>${message}</span>`;
+            
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('opacity-0', 'translate-y-[-10px]');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-[-10px]');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Adjust temp item quantity
+        function updateTempQty(key, delta) {
+            tempOrder[key] = Math.max(0, tempOrder[key] + delta);
+            document.getElementById(`temp-${key}`).innerText = tempOrder[key];
+        }
+
+        // Reset current temp inputs
+        function resetCurrentOrder() {
+            for (let key in tempOrder) {
+                tempOrder[key] = 0;
+                document.getElementById(`temp-${key}`).innerText = '0';
+            }
+        }
+
+        // Get daily sales object for given date
+        function getDailyRecord(dateStr) {
+            if (!allSalesData[dateStr]) {
+                allSalesData[dateStr] = { m1:0, m2:0, m3:0, s1:0, s2:0, s3:0, d1:0, d2:0, d3:0 };
+            }
+            return allSalesData[dateStr];
+        }
+
+        // Submit order from temp to daily total
+        function submitOrder() {
+            if (!currentDate) {
+                showToast('請先選擇有效日期！', 'warning');
+                return;
+            }
+
+            let totalAddedItems = 0;
+            for (let key in tempOrder) {
+                totalAddedItems += tempOrder[key];
+            }
+
+            if (totalAddedItems === 0) {
+                showToast('請先選擇至少一項餐點數量！', 'warning');
+                return;
+            }
+
+            const record = getDailyRecord(currentDate);
+            for (let key in tempOrder) {
+                record[key] += tempOrder[key];
+            }
+
+            saveToStorage();
+            resetCurrentOrder();
+            updateDailyUI();
+            showToast(`已成功將點單累計至 ${currentDate}！`, 'success');
+        }
+
+        // Update Daily UI
+        function updateDailyUI() {
+            document.getElementById('display-date-tag').innerText = currentDate;
+
+            const record = getDailyRecord(currentDate);
+            const tbody = document.getElementById('summary-table-body');
+            tbody.innerHTML = '';
+
+            let grandTotalRevenue = 0;
+            let grandTotalItems = 0;
+
+            let maxItemKey = null;
+            let maxItemQty = -1;
+
+            for (let key in menuItems) {
+                const item = menuItems[key];
+                const qty = record[key] || 0;
+                const total = qty * item.price;
+
+                grandTotalRevenue += total;
+                grandTotalItems += qty;
+
+                if (qty > maxItemQty) {
+                    maxItemQty = qty;
+                    maxItemKey = key;
+                }
+
+                const tr = document.createElement('tr');
+                tr.className = qty > 0 ? 'bg-amber-5/50 hover:bg-amber-50' : 'opacity-60';
+                tr.innerHTML = `
+                    <td class="p-3">
+                        <span class="font-bold">${item.name}</span>
+                        <span class="text-xs text-gray-400 block font-normal">${item.category}</span>
+                    </td>
+                    <td class="p-3 text-center">$${item.price}</td>
+                    <td class="p-3 text-center">
+                        <span class="px-2.5 py-1 rounded-full text-sm font-black ${qty > 0 ? 'bg-amber-200 text-amber-900' : 'bg-gray-100 text-gray-400'}">${qty}</span>
+                    </td>
+                    <td class="p-3 text-right font-black text-amber-900">$${total}</td>
+                `;
+                tbody.appendChild(tr);
+            }
+
+            document.getElementById('total-revenue').innerText = `$${grandTotalRevenue}`;
+            document.getElementById('total-items').innerHTML = `${grandTotalItems} <span class="text-2xl font-bold">份</span>`;
+
+            if (maxItemQty > 0 && maxItemKey) {
+                document.getElementById('top-item-name').innerText = menuItems[maxItemKey].name;
+                document.getElementById('top-item-stat').innerText = `已售出 ${maxItemQty} 份，共 $${maxItemQty * menuItems[maxItemKey].price}`;
+            } else {
+                document.getElementById('top-item-name').innerText = '尚無數據';
+                document.getElementById('top-item-stat').innerText = '請開始登記今日第一個訂單！';
+            }
+
+            updateDailyChart(record);
+        }
+
+        // Update Monthly UI & Calculations
+        function updateMonthlyUI() {
+            document.getElementById('display-month-tag').innerText = currentMonth;
+
+            // Filter dates belonging to selected month (YYYY-MM)
+            const monthDates = Object.keys(allSalesData).filter(d => d.startsWith(currentMonth)).sort();
+
+            let monthlyRevenue = 0;
+            let monthlyItems = 0;
+            let activeDaysCount = 0;
+
+            let itemTotals = { m1:0, m2:0, m3:0, s1:0, s2:0, s3:0, d1:0, d2:0, d3:0 };
+
+            const tbody = document.getElementById('monthly-table-body');
+            tbody.innerHTML = '';
+
+            const daysInMonth = getDaysInMonth(currentMonth);
+            const trendLabels = [];
+            const trendData = [];
+
+            // Build data map for each day of month
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayStr = `${currentMonth}-${String(day).padStart(2, '0')}`;
+                trendLabels.push(`${day}日`);
+
+                if (allSalesData[dayStr]) {
+                    const dayRecord = allSalesData[dayStr];
+                    let dayRev = 0;
+                    let dayQty = 0;
+                    let dayMaxItem = '';
+                    let dayMaxQty = 0;
+
+                    for (let key in menuItems) {
+                        const q = dayRecord[key] || 0;
+                        const p = menuItems[key].price;
+                        dayQty += q;
+                        dayRev += q * p;
+                        itemTotals[key] += q;
+
+                        if (q > dayMaxQty) {
+                            dayMaxQty = q;
+                            dayMaxItem = menuItems[key].name;
+                        }
+                    }
+
+                    trendData.push(dayRev);
+
+                    if (dayQty > 0) {
+                        monthlyRevenue += dayRev;
+                        monthlyItems += dayQty;
+                        activeDaysCount++;
+
+                        // Add table row
+                        const tr = document.createElement('tr');
+                        tr.className = 'hover:bg-indigo-50/50';
+                        tr.innerHTML = `
+                            <td class="p-3 font-bold text-indigo-950">${dayStr}</td>
+                            <td class="p-3 text-center font-bold">${dayQty} 份</td>
+                            <td class="p-3 text-center font-black text-emerald-600">$${dayRev}</td>
+                            <td class="p-3 text-center text-sm"><span class="bg-amber-100 text-amber-900 px-2.5 py-1 rounded-full font-bold">${dayMaxItem || '無'} (${dayMaxQty})</span></td>
+                            <td class="p-3 text-right">
+                                <button onclick="jumpToDate('${dayStr}')" class="text-xs bg-indigo-500 hover:bg-indigo-600 text-white font-bold px-2.5 py-1.5 rounded-lg mr-1">
+                                    <i class="fa-solid fa-eye"></i> 檢視
+                                </button>
+                                <button onclick="deleteDateData('${dayStr}')" class="text-xs bg-red-100 hover:bg-red-200 text-red-600 font-bold px-2.5 py-1.5 rounded-lg">
+                                    <i class="fa-solid fa-trash"></i> 刪除
+                                </button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    }
+                } else {
+                    trendData.push(0);
+                }
+            }
+
+            if (tbody.children.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-gray-400 font-bold">該月份尚無任何營業紀錄</td></tr>`;
+            }
+
+            // Summary Cards
+            const avgDailyRev = activeDaysCount > 0 ? Math.round(monthlyRevenue / activeDaysCount) : 0;
+
+            document.getElementById('monthly-total-revenue').innerText = `$${monthlyRevenue}`;
+            document.getElementById('monthly-total-items').innerHTML = `${monthlyItems} <span class="text-xl font-bold">份</span>`;
+            document.getElementById('monthly-active-days').innerHTML = `${activeDaysCount} <span class="text-xl font-bold">天</span>`;
+            document.getElementById('monthly-avg-revenue').innerText = `$${avgDailyRev}`;
+
+            // Monthly Top Item
+            let topKey = null;
+            let topQty = -1;
+            for (let key in itemTotals) {
+                if (itemTotals[key] > topQty) {
+                    topQty = itemTotals[key];
+                    topKey = key;
+                }
+            }
+
+            if (topQty > 0 && topKey) {
+                document.getElementById('monthly-top-item-name').innerText = menuItems[topKey].name;
+                document.getElementById('monthly-top-item-stat').innerText = `本月共售出 ${topQty} 份 ($${topQty * menuItems[topKey].price})`;
+            } else {
+                document.getElementById('monthly-top-item-name').innerText = '尚無數據';
+                document.getElementById('monthly-top-item-stat').innerText = '暫無本月資料';
+            }
+
+            // Update Charts
+            updateMonthlyCharts(trendLabels, trendData, itemTotals);
+        }
+
+        // Helper: Get total days in month YYYY-MM
+        function getDaysInMonth(monthStr) {
+            const parts = monthStr.split('-');
+            if (parts.length < 2) return 31;
+            return new Date(parts[0], parts[1], 0).getDate();
+        }
+
+        // Jump to date from monthly table
+        function jumpToDate(dateStr) {
+            currentDate = dateStr;
+            document.getElementById('selected-date').value = dateStr;
+            switchView('daily');
+        }
+
+        // Delete single date data
+        function deleteDateData(dateStr) {
+            if (confirm(`確定要刪除 ${dateStr} 的數據嗎？此操作不可復原！`)) {
+                delete allSalesData[dateStr];
+                saveToStorage();
+                updateMonthlyUI();
+                showToast(`已成功刪除 ${dateStr} 數據`, 'info');
+            }
+        }
+
+        // Chart Initialization
+        function initDailyChart() {
+            const ctx = document.getElementById('dailySalesChart').getContext('2d');
+            dailySalesChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.values(menuItems).map(i => i.name),
+                    datasets: [{
+                        data: Array(9).fill(0),
+                        backgroundColor: [
+                            '#FF6B81', '#FF4757', '#FF7F50',
+                            '#FFA502', '#ECCC68', '#FFDA79',
+                            '#70A1FF', '#1E90FF', '#00A8FF'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    cutout: '65%'
+                }
+            });
+        }
+
+        function updateDailyChart(record) {
+            if (!dailySalesChartInstance) return;
+            dailySalesChartInstance.data.datasets[0].data = Object.keys(menuItems).map(key => record[key] || 0);
+            dailySalesChartInstance.update();
+        }
+
+        function initMonthlyCharts() {
+            // Trend Line Chart
+            const ctxTrend = document.getElementById('monthlyTrendChart').getContext('2d');
+            monthlyTrendChartInstance = new Chart(ctxTrend, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: '每日營業額 ($)',
+                        data: [],
+                        borderColor: '#6366F1',
+                        backgroundColor: 'rgba(99, 102, 241, 0.15)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.3,
+                        pointBackgroundColor: '#4F46E5',
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#F3F4F6' } },
+                        x: { grid: { display: false } }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+
+            // Pie Chart
+            const ctxPie = document.getElementById('monthlyPieChart').getContext('2d');
+            monthlyPieChartInstance = new Chart(ctxPie, {
+                type: 'pie',
+                data: {
+                    labels: Object.values(menuItems).map(i => i.name),
+                    datasets: [{
+                        data: Array(9).fill(0),
+                        backgroundColor: [
+                            '#FF6B81', '#FF4757', '#FF7F50',
+                            '#FFA502', '#ECCC68', '#FFDA79',
+                            '#70A1FF', '#1E90FF', '#00A8FF'
+                        ],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+
+        function updateMonthlyCharts(labels, trendData, itemTotals) {
+            if (monthlyTrendChartInstance) {
+                monthlyTrendChartInstance.data.labels = labels;
+                monthlyTrendChartInstance.data.datasets[0].data = trendData;
+                monthlyTrendChartInstance.update();
+            }
+
+            if (monthlyPieChartInstance) {
+                monthlyPieChartInstance.data.datasets[0].data = Object.keys(menuItems).map(key => itemTotals[key] || 0);
+                monthlyPieChartInstance.update();
+            }
+        }
+
+        // LocalStorage Helpers
+        function saveToStorage() {
+            try {
+                localStorage.setItem('happy_kitchen_sales_v2', JSON.stringify(allSalesData));
+            } catch (e) {
+                console.error('Storage Save Error', e);
+            }
+        }
+
+        function loadFromStorage() {
+            try {
+                const stored = localStorage.getItem('happy_kitchen_sales_v2');
+                if (stored) {
+                    allSalesData = JSON.parse(stored);
+                }
+            } catch (e) {
+                console.error('Storage Load Error', e);
+            }
+        }
+
+        // Reset Current Day Data
+        function resetDailyData() {
+            if (confirm(`確定要清除【${currentDate}】的所有銷售紀錄嗎？此動作無法復原！`)) {
+                allSalesData[currentDate] = { m1:0, m2:0, m3:0, s1:0, s2:0, s3:0, d1:0, d2:0, d3:0 };
+                saveToStorage();
+                updateDailyUI();
+                showToast('當日數據已成功重置！', 'info');
+            }
+        }
+
+        // Copy Daily Report Text
+        function copyDailyReport() {
+            const record = getDailyRecord(currentDate);
+            let totalRevenue = 0;
+            let totalItems = 0;
+
+            let reportText = `---【開心小廚】每日營業額與訂單報表 ---\n`;
+            reportText += `日期：${currentDate}\n\n`;
+            reportText += `【明細銷售紀錄】\n`;
+
+            for (let key in menuItems) {
+                const item = menuItems[key];
+                const qty = record[key] || 0;
+                const total = qty * item.price;
+                totalRevenue += total;
+                totalItems += qty;
+                reportText += `- ${item.name} ($${item.price}): ${qty} 份 = $${total}\n`;
+            }
+
+            reportText += `\n----------------------------\n`;
+            reportText += `今日總售出份數：${totalItems} 份\n`;
+            reportText += `今日總營業額：$${totalRevenue}\n`;
+            reportText += `----------------------------\n`;
+
+            copyTextToClipboard(reportText, '已複製每日報表至剪貼簿！');
+        }
+
+        // Copy Monthly Report Text
+        function copyMonthlyReport() {
+            let totalRev = 0;
+            let totalQty = 0;
+            let activeDays = 0;
+            let itemTotals = { m1:0, m2:0, m3:0, s1:0, s2:0, s3:0, d1:0, d2:0, d3:0 };
+
+            for (let dateKey in allSalesData) {
+                if (dateKey.startsWith(currentMonth)) {
+                    let dayRev = 0;
+                    let dayQty = 0;
+                    const rec = allSalesData[dateKey];
+                    for (let k in menuItems) {
+                        const q = rec[k] || 0;
+                        itemTotals[k] += q;
+                        dayQty += q;
+                        dayRev += q * menuItems[k].price;
+                    }
+                    if (dayQty > 0) {
+                        totalRev += dayRev;
+                        totalQty += dayQty;
+                        activeDays++;
+                    }
+                }
+            }
+
+            let reportText = `---【開心小廚】月度營業額總結報表 ---\n`;
+            reportText += `統計月份：${currentMonth}\n`;
+            reportText += `營運天數：${activeDays} 天\n`;
+            reportText += `本月總營業額：$${totalRev}\n`;
+            reportText += `本月總售出份數：${totalQty} 份\n`;
+            reportText += `每日平均營業額：$${activeDays > 0 ? Math.round(totalRev / activeDays) : 0}\n\n`;
+            reportText += `【各餐點累計銷售數量】\n`;
+
+            for (let key in menuItems) {
+                const item = menuItems[key];
+                const qty = itemTotals[key];
+                reportText += `- ${item.name}: ${qty} 份 ($${qty * item.price})\n`;
+            }
+            reportText += `----------------------------\n`;
+
+            copyTextToClipboard(reportText, '已複製月度總結報表至剪貼簿！');
+        }
+
+        // Copy Helper
+        function copyTextToClipboard(text, successMsg) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                showToast(successMsg, 'success');
+            } catch (err) {
+                showToast('複製失敗，請手動複製。', 'warning');
+            }
+            document.body.removeChild(textArea);
+        }
+    </script>
+
+</body>
+</html>
